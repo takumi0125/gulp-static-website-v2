@@ -7,11 +7,11 @@ gulp-static-website
 ```bash
 mkdir yourProject
 cd yourProject
-git clone git@github.com:takumi0125/gulp-static-website.git .
+git clone --recursive git@github.com:takumi0125/gulp-static-website.git .
 cd gulp
 npm install
 ```
-<a href="http://sass-lang.com/" target="_blank">Sass/SCSS</a>, <a href="http://compass-style.org/" target="_blank">Compass</a>がインストールされていない場合はインストールしてください。
+<a href="http://sass-lang.com/" target="_blank">Sass/SCSS</a>がインストールされていない場合はインストールしてください。
 
 ## 概要
 
@@ -92,7 +92,7 @@ createSpritesTask
 
 ## bower
 
-`bower.json` に設定を記述することにより、`gulp init` コマンドで `src/common/js/lib/` に JS ライブラリが自動で配置されます。
+`bower.json` に設定を記述することにより、`gulp init` コマンドで `assets/js/lib/` に JS ライブラリが自動で配置されます。
 
 ```js
 {
