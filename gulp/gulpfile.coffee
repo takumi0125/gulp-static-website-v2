@@ -196,6 +196,7 @@ gulp.task 'html', [ 'copyHtml', 'jade' ]
 gulp.task 'sass', ->
   gulp.src createSrcArr 'sass'
   .pipe changed PUBLISH_DIR, { extension: '.css' }
+  .pipe plumber errorHandler: errorHandler 'sass'
   .pipe sass
     unixNewlines: true
     "sourcemap=none": true
