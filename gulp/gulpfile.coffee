@@ -1,11 +1,11 @@
 gulp         = require 'gulp'
 bower        = require 'main-bower-files'
+changed      = require 'gulp-changed'
 clean        = require 'gulp-clean'
 concat       = require 'gulp-concat'
 coffee       = require 'gulp-coffee'
 data         = require 'gulp-data'
 filter       = require 'gulp-filter'
-newer        = require 'gulp-newer'
 notify       = require 'gulp-notify'
 jade         = require 'gulp-jade'
 jsonlint     = require 'gulp-jsonlint'
@@ -130,14 +130,14 @@ gulp.task 'concat', ->
 # copyHtml
 gulp.task 'copyHtml', ->
   gulp.src createSrcArr 'html'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyHtml'
   .pipe gulp.dest PUBLISH_DIR
 
 # copyCss
 gulp.task 'copyCss', ->
   gulp.src createSrcArr 'css'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyCss'
   .pipe autoprefixer()
   .pipe gulp.dest PUBLISH_DIR
@@ -145,28 +145,28 @@ gulp.task 'copyCss', ->
 # copyJs
 gulp.task 'copyJs', [ 'jshint' ], ->
   gulp.src createSrcArr 'js'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyJs'
   .pipe gulp.dest PUBLISH_DIR
 
 # copyJson
 gulp.task 'copyJson', [ 'jsonlint' ], ->
   gulp.src createSrcArr 'json'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyJson'
   .pipe gulp.dest PUBLISH_DIR
 
 # copyImg
 gulp.task 'copyImg', ->
   gulp.src createSrcArr 'img'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyImg'
   .pipe gulp.dest PUBLISH_DIR
 
 # copyOthers
 gulp.task 'copyOthers', ->
   gulp.src createSrcArr 'others'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyOthers'
   .pipe gulp.dest PUBLISH_DIR
 
@@ -178,7 +178,7 @@ gulp.task 'copyOthers', ->
 # jade
 gulp.task 'jade', ->
   gulp.src createSrcArr 'jade'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR, { extension: '.html' }
   .pipe plumber errorHandler: errorHandler 'jade'
   .pipe data -> require DATA_JSON
   .pipe jade pretty: true
@@ -195,7 +195,7 @@ gulp.task 'html', [ 'copyHtml', 'jade' ]
 # sass
 gulp.task 'sass', ->
   gulp.src createSrcArr 'sass'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR, { extension: '.css' }
   .pipe sass
     unixNewlines: true
     "sourcemap=none": true
@@ -216,7 +216,7 @@ gulp.task 'css', [ 'copyCss', 'sass' ]
 gulp.task 'jshint', ->
   libFilter = filter [ '**', '!**/lib/**' ]
   gulp.src createSrcArr 'js'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'jshint'
   .pipe libFilter
   .pipe jshint()
@@ -226,7 +226,7 @@ gulp.task 'jshint', ->
 # coffee
 gulp.task 'coffee', ->
   gulp.src createSrcArr 'coffee'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR, { extension: '.js' }
   .pipe plumber errorHandler: errorHandler 'coffeelint'
   .pipe coffee()
   .pipe gulp.dest PUBLISH_DIR
@@ -242,7 +242,7 @@ gulp.task 'js', [ 'copyJs', 'coffee' ]
 # jsonlint
 gulp.task 'jsonlint', ->
   gulp.src createSrcArr 'json'
-  .pipe newer PUBLISH_DIR
+  .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'jsonlint'
   .pipe jsonlint()
   .pipe jsonlint.reporter()
