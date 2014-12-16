@@ -24,7 +24,7 @@ PUBLISH_DIR = '../htdocs'
 BOWER_COMPONENTS = './bower_components'
 DATA_JSON = "#{SRC_DIR}/_data.json"
 
-BOWER_INSTALL_DIR_BASE = '/assets' # '/common' or ''
+BOWER_INSTALL_DIR_BASE = '/assets'
 
 paths =
   html: "#{SRC_DIR}/**/*.html"
