@@ -24,7 +24,7 @@ PUBLISH_DIR = '../htdocs'
 BOWER_COMPONENTS = './bower_components'
 DATA_JSON = "#{SRC_DIR}/_data.json"
 
-BOWER_INSTALL_DIR_BASE = '/assets'
+ASSETS_DIR = '/assets'
 
 paths =
   html: "#{SRC_DIR}/**/*.html"
@@ -46,7 +46,7 @@ paths =
   ]
 
 
-imgTask = [ 'copyImg' ]
+spritesTask = []
 watchSpritesTasks = []
 
 createCopyFilesFilter = ()-> filter [ '**', '!**/_*/**', "!**/_*/", '!**/_*' ]
@@ -58,45 +58,41 @@ createSrcArr = (name) -> [].concat paths[name], "!#{SRC_DIR}/_*", "!#{SRC_DIR}/*
 #
 # spritesmith のタスクを生成
 # 
-# @param {string} taskName          タスクを識別するための名前 スプライトタスクが複数ある場合はユニークにする
-# @param {string} dirBase           コンテンツディレクトリのパス (SRC_DIRからの相対パス)
-# @param {string} outputFileName    出力されるスプライト画像 / CSS (SCSS) の名前
-# @param {string} outputImgPathType CSSに記述される画像パスのタイプ (absolute | relative)
-# @param {string} imgDir            dirBaseから画像ディレクトリへのパス
-# @param {string} cssDir            dirBaseからCSSディレクトリへのパス
+# @param {string} taskName       タスクを識別するための名前 スプライトタスクが複数ある場合はユニークにする
+# @param {string} imgDir         画像ディレクトリへのパス
+# @param {string} cssDir         CSSディレクトリへのパス
+# @param {string} outputImgPath  CSSに記述される画像パス
 #
-# #{SRC_DIR}#{dirBase}#{imgDir}/_#{outputFileName}/
+# #{SRC_DIR}#{imgDir}/_#{taskName}/
 # 以下にソース画像を格納しておくと
-# #{SRC_DIR}#{dirBase}#{cssDir}/_#{outputFileName}.scss と
-# #{SRC_DIR}#{dirBase}#{imgDir}/#{outputFileName}.png が生成される
+# #{SRC_DIR}#{cssDir}/_#{taskName}.scss と
+# #{SRC_DIR}#{imgDir}/#{taskName}.png が生成される
 # かつ watch タスクの監視も追加
 #
-createSpritesTask = (taskName, dirBase, outputFileName = 'sprites', outputImgPathType = 'absolute', imgDir = '/img', cssDir = '/css') ->
-  imgTask.push taskName
+createSpritesTask = (taskName, imgDir, cssDir, outputImgPath = '') ->
+  spritesTask.push taskName
   
-  srcImgFiles = "#{SRC_DIR}#{dirBase}#{imgDir}/_#{outputFileName}/*"
+  srcImgFiles = "#{SRC_DIR}#{imgDir}/_#{taskName}/*"
   gulp.task taskName, ->
     spriteObj =
-      imgName: "#{outputFileName}.png"
-      
-      cssName: "_#{outputFileName}.scss"
+      imgName: "#{taskName}.png"
+      cssName: "_#{taskName}.scss"
       algorithm: 'binary-tree'
-      padding: 1
+      padding: 2
 
-    if outputImgPathType is 'absolute'
-      spriteObj.imgPath = "#{dirBase}#{imgDir}/#{outputFileName}.png"
+    if outputImgPath then spriteObj.imgPath = outputImgPath
 
     spriteData = gulp.src srcImgFiles
     .pipe plumber errorHandler: errorHandler taskName
     .pipe sprite spriteObj
     
     spriteData.img
-    .pipe gulp.dest "#{SRC_DIR}#{dirBase}#{imgDir}"
-    .pipe gulp.dest "#{PUBLISH_DIR}#{dirBase}#{imgDir}"
+    .pipe gulp.dest "#{SRC_DIR}#{imgDir}"
+    .pipe gulp.dest "#{PUBLISH_DIR}#{imgDir}"
     
-    spriteData.css.pipe gulp.dest "#{SRC_DIR}#{dirBase}#{cssDir}"
+    spriteData.css.pipe gulp.dest "#{SRC_DIR}#{cssDir}"
 
-  watchSpritesTasks.push => gulp.watch srcImgFiles, [ taskName ]
+  watchSpritesTasks.unshift => gulp.watch srcImgFiles, [ taskName ]
   
 
 
@@ -258,10 +254,10 @@ gulp.task 'json', [ 'copyJson' ]
 ###########
 
 # sprite
-createSpritesTask 'commonSprites', '/assets', 'commonSprites'
-createSpritesTask 'indexSprites', '/assets', 'spritesIndex'
+createSpritesTask 'commonSprites', "#{ASSETS_DIR}/img/common", "#{ASSETS_DIR}/css", "#{ASSETS_DIR}/img/common/commonSprites.png"
+createSpritesTask 'indexSprites', "#{ASSETS_DIR}/img/index", "#{ASSETS_DIR}/css", "#{ASSETS_DIR}/img/index/indexSprites.png"
 
-gulp.task 'img', imgTask
+gulp.task 'sprites', spritesTask
 
 
 ###############
@@ -312,10 +308,10 @@ gulp.task 'bower', ->
           bowerJson: 'bower.json'
       .pipe plumber errorHandler: errorHandler
       .pipe jsFilter
-      .pipe gulp.dest "#{SRC_DIR}#{BOWER_INSTALL_DIR_BASE}/js/lib"
+      .pipe gulp.dest "#{SRC_DIR}#{ASSETS_DIR}/js/lib"
       .pipe jsFilter.restore()
       .pipe cssFilter
-      .pipe gulp.dest "#{SRC_DIR}#{BOWER_INSTALL_DIR_BASE}/css/lib"
+      .pipe gulp.dest "#{SRC_DIR}#{ASSETS_DIR}/css/lib"
       .pipe cssFilter.restore()
       .pipe notify 'done bower task'
 
@@ -332,6 +328,7 @@ gulp.task 'init', [ 'bower' ]
 ###############
 
 gulp.task 'default', [ 'clean' ], ->
-  runSequence [ 'json', 'img' ], [ 'html', 'css', 'js', 'copyOthers' ], ->
+  runSequence [ 'json', 'sprites' ], [ 'html', 'css', 'js', 'copyImg', 'copyOthers' ], ->
     gulp.src(PUBLISH_DIR).pipe notify 'build complete'
+
 
