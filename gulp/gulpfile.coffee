@@ -57,7 +57,7 @@ createSrcArr = (name) -> [].concat paths[name], "!#{SRC_DIR}/_*", "!#{SRC_DIR}/*
 
 #
 # spritesmith のタスクを生成
-# 
+#
 # @param {string} taskName       タスクを識別するための名前 スプライトタスクが複数ある場合はユニークにする
 # @param {string} imgDir         画像ディレクトリへのパス
 # @param {string} cssDir         CSSディレクトリへのパス
@@ -71,7 +71,7 @@ createSrcArr = (name) -> [].concat paths[name], "!#{SRC_DIR}/_*", "!#{SRC_DIR}/*
 #
 createSpritesTask = (taskName, imgDir, cssDir, outputImgPath = '') ->
   spritesTask.push taskName
-  
+
   srcImgFiles = "#{SRC_DIR}#{imgDir}/_#{taskName}/*"
   gulp.task taskName, ->
     spriteObj =
@@ -85,15 +85,15 @@ createSpritesTask = (taskName, imgDir, cssDir, outputImgPath = '') ->
     spriteData = gulp.src srcImgFiles
     .pipe plumber errorHandler: errorHandler taskName
     .pipe sprite spriteObj
-    
+
     spriteData.img
     .pipe gulp.dest "#{SRC_DIR}#{imgDir}"
     .pipe gulp.dest "#{PUBLISH_DIR}#{imgDir}"
-    
+
     spriteData.css.pipe gulp.dest "#{SRC_DIR}#{cssDir}"
 
   watchSpritesTasks.unshift => gulp.watch srcImgFiles, [ taskName ]
-  
+
 
 
 #############
@@ -177,7 +177,9 @@ gulp.task 'jade', ->
   .pipe changed PUBLISH_DIR, { extension: '.html' }
   .pipe plumber errorHandler: errorHandler 'jade'
   .pipe data -> require DATA_JSON
-  .pipe jade pretty: true
+  .pipe jade
+    pretty: true
+    basedir: SRC_DIR
   .pipe gulp.dest PUBLISH_DIR
 
 # html
@@ -297,7 +299,7 @@ gulp.task 'bower', ->
       console.log err
     else
       console.log stdout
-      
+
       jsFilter = filter '**/*.js'
       cssFilter = filter '**/*.css'
       gulp.src bower
@@ -330,5 +332,3 @@ gulp.task 'init', [ 'bower' ]
 gulp.task 'default', [ 'clean' ], ->
   runSequence [ 'json', 'sprites' ], [ 'html', 'css', 'js', 'copyImg', 'copyOthers' ], ->
     gulp.src(PUBLISH_DIR).pipe notify 'build complete'
-
-
