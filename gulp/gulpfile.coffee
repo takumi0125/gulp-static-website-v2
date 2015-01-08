@@ -1,23 +1,25 @@
 gulp         = require 'gulp'
-bower        = require 'main-bower-files'
+autoprefixer = require 'gulp-autoprefixer'
 changed      = require 'gulp-changed'
 clean        = require 'gulp-clean'
-concat       = require 'gulp-concat'
 coffee       = require 'gulp-coffee'
+concat       = require 'gulp-concat'
 data         = require 'gulp-data'
 filter       = require 'gulp-filter'
 notify       = require 'gulp-notify'
 jade         = require 'gulp-jade'
-jsonlint     = require 'gulp-jsonlint'
 jshint       = require 'gulp-jshint'
+jsonlint     = require 'gulp-jsonlint'
 plumber      = require 'gulp-plumber'
-autoprefixer = require 'gulp-autoprefixer'
+print        = require 'gulp-print'
 sass         = require 'gulp-ruby-sass'
+sourcemap    = require 'gulp-sourcemaps'
 sprite       = require 'gulp.spritesmith'
 webserver    = require 'gulp-webserver'
 
-exec        = require('child_process').exec
-runSequence = require 'run-sequence'
+bower        = require 'main-bower-files'
+exec         = require('child_process').exec
+runSequence  = require 'run-sequence'
 
 SRC_DIR = './src'
 PUBLISH_DIR = '../htdocs'
@@ -27,14 +29,14 @@ DATA_JSON = "#{SRC_DIR}/_data.json"
 ASSETS_DIR = '/assets'
 
 paths =
-  html: "#{SRC_DIR}/**/*.html"
-  jade: "#{SRC_DIR}/**/*.jade"
-  css: "#{SRC_DIR}/**/*.css"
-  sass: "#{SRC_DIR}/**/*.{sass,scss}"
-  js: "#{SRC_DIR}/**/*.js"
-  json: "#{SRC_DIR}/**/*.json"
+  html  : "#{SRC_DIR}/**/*.html"
+  jade  : "#{SRC_DIR}/**/*.jade"
+  css   : "#{SRC_DIR}/**/*.css"
+  sass  : "#{SRC_DIR}/**/*.{sass,scss}"
+  js    : "#{SRC_DIR}/**/*.js"
+  json  : "#{SRC_DIR}/**/*.json"
   coffee: "#{SRC_DIR}/**/*.coffee"
-  img: "#{SRC_DIR}/**/img/**"
+  img   : "#{SRC_DIR}/**/img/**"
   others: [
     "#{SRC_DIR}/**"
     "#{SRC_DIR}/**/.htaccess"
@@ -44,12 +46,13 @@ paths =
     "!#{SRC_DIR}/**/_*/"
     "!#{SRC_DIR}/**/_*"
   ]
+  jadeInclude  : "#{SRC_DIR}/**/_*.jade"
+  sassInclude  : "#{SRC_DIR}/**/_*.{sass,scss}"
+  coffeeInclude: "#{SRC_DIR}/**/_*.{coffee}"
 
 
 spritesTask = []
 watchSpritesTasks = []
-
-createCopyFilesFilter = ()-> filter [ '**', '!**/_*/**', "!**/_*/", '!**/_*' ]
 
 errorHandler = (name)-> return notify.onError name + ": <%= error %>"
 
@@ -113,10 +116,11 @@ gulp.task 'clean', ->
 
 # concat
 gulp.task 'concat', ->
-  gulp.src "#{SRC_DIR}/__test"
+  gulp.src ['']
   .pipe plumber errorHandler: errorHandler 'concat'
-  .pipe concat 'build.js'
-  .pipe gulp.dest "#{PUBLISH_DIR}/js"
+  .pipe concat 'common.js'
+  .pipe gulp.dest "#{PUBLISH_DIR}#{ASSETS_DIR}/js/lib"
+  .pipe print (path)-> "[concat]: #{path}"
 
 
 ############
@@ -129,6 +133,7 @@ gulp.task 'copyHtml', ->
   .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyHtml'
   .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[copyHtml]: #{path}"
 
 # copyCss
 gulp.task 'copyCss', ->
@@ -137,6 +142,7 @@ gulp.task 'copyCss', ->
   .pipe plumber errorHandler: errorHandler 'copyCss'
   .pipe autoprefixer()
   .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[copyCss]: #{path}"
 
 # copyJs
 gulp.task 'copyJs', [ 'jshint' ], ->
@@ -144,6 +150,7 @@ gulp.task 'copyJs', [ 'jshint' ], ->
   .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyJs'
   .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[copyJs]: #{path}"
 
 # copyJson
 gulp.task 'copyJson', [ 'jsonlint' ], ->
@@ -151,6 +158,7 @@ gulp.task 'copyJson', [ 'jsonlint' ], ->
   .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyJson'
   .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[copyJson]: #{path}"
 
 # copyImg
 gulp.task 'copyImg', ->
@@ -158,6 +166,7 @@ gulp.task 'copyImg', ->
   .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyImg'
   .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[copyImg]: #{path}"
 
 # copyOthers
 gulp.task 'copyOthers', ->
@@ -165,6 +174,7 @@ gulp.task 'copyOthers', ->
   .pipe changed PUBLISH_DIR
   .pipe plumber errorHandler: errorHandler 'copyOthers'
   .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[copyOthers]: #{path}"
 
 
 ############
@@ -181,6 +191,18 @@ gulp.task 'jade', ->
     pretty: true
     basedir: SRC_DIR
   .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[jade]: #{path}"
+
+# jadeAll
+gulp.task 'jadeAll', ->
+  gulp.src createSrcArr 'jade'
+  .pipe plumber errorHandler: errorHandler 'jadeAll'
+  .pipe data -> require DATA_JSON
+  .pipe jade
+    pretty: true
+    basedir: SRC_DIR
+  .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[jadeAll]: #{path}"
 
 # html
 gulp.task 'html', [ 'copyHtml', 'jade' ]
@@ -201,7 +223,19 @@ gulp.task 'sass', ->
     style: 'expanded'
   .pipe autoprefixer()
   .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[sass]: #{path}"
 
+# sassAll
+gulp.task 'sassAll', ->
+  gulp.src createSrcArr 'sass'
+  .pipe plumber errorHandler: errorHandler 'sass'
+  .pipe sass
+    unixNewlines: true
+    "sourcemap=none": true
+    style: 'expanded'
+  .pipe autoprefixer()
+  .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[sassAll]: #{path}"
 
 # css
 gulp.task 'css', [ 'copyCss', 'sass' ]
@@ -229,6 +263,15 @@ gulp.task 'coffee', ->
   .pipe plumber errorHandler: errorHandler 'coffeelint'
   .pipe coffee()
   .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[coffee]: #{path}"
+
+# coffeeAll
+gulp.task 'coffeeAll', ->
+  gulp.src createSrcArr 'coffee'
+  .pipe plumber errorHandler: errorHandler 'coffeelint'
+  .pipe coffee()
+  .pipe gulp.dest PUBLISH_DIR
+  .pipe print (path)-> "[coffeeAll]: #{path}"
 
 # js
 gulp.task 'js', [ 'copyJs', 'coffee' ]
@@ -256,8 +299,7 @@ gulp.task 'json', [ 'copyJson' ]
 ###########
 
 # sprite
-createSpritesTask 'commonSprites', "#{ASSETS_DIR}/img/common", "#{ASSETS_DIR}/css", "#{ASSETS_DIR}/img/common/commonSprites.png"
-createSpritesTask 'indexSprites', "#{ASSETS_DIR}/img/index", "#{ASSETS_DIR}/css", "#{ASSETS_DIR}/img/index/indexSprites.png"
+createSpritesTask 'commonSprites', "#{ASSETS_DIR}/img/common", "#{ASSETS_DIR}/css/_sprites", "../img/common/commonSprites.png"
 
 gulp.task 'sprites', spritesTask
 
@@ -269,14 +311,19 @@ gulp.task 'sprites', spritesTask
 # watcher
 gulp.task 'watcher', ->
   gulp.watch paths.html, [ 'copyHtml' ]
-  gulp.watch paths.jade, [ 'jade' ]
   gulp.watch paths.css, [ 'copyCss' ]
-  gulp.watch paths.sass, [ 'sass' ]
   gulp.watch paths.js, [ 'copyJs' ]
   gulp.watch paths.json, [ 'copyJson' ]
-  gulp.watch paths.coffee, [ 'coffee' ]
   gulp.watch paths.img, [ 'copyImg' ]
   gulp.watch paths.others, [ 'copyOthers' ]
+  gulp.watch createSrcArr('jade'), [ 'jade' ]
+  gulp.watch createSrcArr('sass'), [ 'sass' ]
+  gulp.watch createSrcArr('coffee'), [ 'coffee' ]
+
+  # インクルードファイル(アンスコから始まるファイル)更新時はすべてをコンパイル
+  gulp.watch paths.jadeInclude, [ 'jadeAll' ]
+  gulp.watch paths.sassInclude, [ 'sassAll' ]
+  gulp.watch paths.coffeeInclude, [ 'coffeeAll' ]
 
   for task in  watchSpritesTasks then task()
 
@@ -313,7 +360,7 @@ gulp.task 'bower', ->
       .pipe gulp.dest "#{SRC_DIR}#{ASSETS_DIR}/js/lib"
       .pipe jsFilter.restore()
       .pipe cssFilter
-      .pipe gulp.dest "#{SRC_DIR}#{ASSETS_DIR}/css/lib"
+      .pipe gulp.dest "#{SRC_DIR}#{ASSETS_DIR}/css/_sprites/lib"
       .pipe cssFilter.restore()
       .pipe notify 'done bower task'
 
@@ -330,5 +377,5 @@ gulp.task 'init', [ 'bower' ]
 ###############
 
 gulp.task 'default', [ 'clean' ], ->
-  runSequence [ 'json', 'sprites' ], [ 'html', 'css', 'js', 'copyImg', 'copyOthers' ], ->
+  runSequence [ 'json', 'sprites' ], [ 'html', 'css', 'js', 'copyImg', 'copyOthers', 'concat' ], ->
     gulp.src(PUBLISH_DIR).pipe notify 'build complete'
