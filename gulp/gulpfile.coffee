@@ -332,6 +332,7 @@ gulp.task 'watcher', ->
     livereload: true
     port: 50000
     open: true
+    host: '0.0.0.0'
   .pipe notify 'start local server. http://localhost:50000/'
 
 

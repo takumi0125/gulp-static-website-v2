@@ -1,4 +1,4 @@
-gulp-static-website
+gulp-static-website-v2
 ===============================
 
 静的サイト制作用の汎用gulpタスクテンプレートです。
