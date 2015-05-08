@@ -3,15 +3,13 @@ autoprefixer = require 'gulp-autoprefixer'
 changed      = require 'gulp-changed'
 clean        = require 'gulp-clean'
 coffee       = require 'gulp-coffee'
-coffeelint   = require 'gulp-coffeelint'
 concat       = require 'gulp-concat'
 data         = require 'gulp-data'
 filter       = require 'gulp-filter'
-imagemin     = require 'gulp-imagemin'
+notify       = require 'gulp-notify'
 jade         = require 'gulp-jade'
 jshint       = require 'gulp-jshint'
 jsonlint     = require 'gulp-jsonlint'
-notify       = require 'gulp-notify'
 plumber      = require 'gulp-plumber'
 print        = require 'gulp-print'
 sass         = require 'gulp-ruby-sass'
@@ -19,18 +17,13 @@ sourcemap    = require 'gulp-sourcemaps'
 sprite       = require 'gulp.spritesmith'
 webserver    = require 'gulp-webserver'
 
-shell        = require 'gulp-shell'
-
 bower        = require 'main-bower-files'
 exec         = require('child_process').exec
 runSequence  = require 'run-sequence'
-serveStatic  = require 'serve-static'
-connectSSI   = require 'connect-ssi'
 
 SRC_DIR = './src'
 PUBLISH_DIR = '../htdocs'
 BOWER_COMPONENTS = './bower_components'
-AUTOPREFIXER_OPT = ['last 2 versions', 'ie 8', 'ie 9']
 DATA_JSON = "#{SRC_DIR}/_data.json"
 
 ASSETS_DIR = '/assets'
@@ -43,34 +36,27 @@ paths =
   js    : "#{SRC_DIR}/**/*.js"
   json  : "#{SRC_DIR}/**/*.json"
   coffee: "#{SRC_DIR}/**/*.coffee"
-  cson  : "#{SRC_DIR}/**/*.cson"
-  img   : "#{SRC_DIR}/**/images/**"
+  img   : "#{SRC_DIR}/**/img/**"
   others: [
     "#{SRC_DIR}/**"
     "#{SRC_DIR}/**/.htaccess"
-    "!#{SRC_DIR}/**/*.{html,jade,css,sass,scss,js,json,coffee,cson,md}"
-    "!#{SRC_DIR}/**/images/**"
+    "!#{SRC_DIR}/**/*.{html,jade,css,sass,scss,js,json,coffee,md}"
+    "!#{SRC_DIR}/**/img/**"
     "!#{SRC_DIR}/**/_*/**"
     "!#{SRC_DIR}/**/_*/"
     "!#{SRC_DIR}/**/_*"
   ]
   jadeInclude  : "#{SRC_DIR}/**/_*.jade"
   sassInclude  : "#{SRC_DIR}/**/_*.{sass,scss}"
-  coffeeInclude: [
-    "#{SRC_DIR}/**/_*.{coffee}"
-    "!#{SRC_DIR}/**/_src/*.{coffee}"
-  ]
+  coffeeInclude: "#{SRC_DIR}/**/_*.{coffee}"
+
 
 spritesTask = []
-coffeeConcatTask = []
-
 watchSpritesTasks = []
-watchCoffeeConcatTask = []
-
 
 errorHandler = (name)-> return notify.onError name + ": <%= error %>"
 
-createSrcArr = (name)-> [].concat paths[name], "!#{SRC_DIR}/_*", "!#{SRC_DIR}/**/_*/", "!#{SRC_DIR}/**/_*/**"
+createSrcArr = (name) -> [].concat paths[name], "!#{SRC_DIR}/_*", "!#{SRC_DIR}/**/_*/", "!#{SRC_DIR}/**/_*/**"
 
 #
 # spritesmith のタスクを生成
@@ -96,8 +82,6 @@ createSpritesTask = (taskName, imgDir, cssDir, outputImgPath = '') ->
       cssName: "_#{taskName}.scss"
       algorithm: 'binary-tree'
       padding: 2
-      cssOpts:
-        variableNameTransforms: ['camelize']
 
     if outputImgPath then spriteObj.imgPath = outputImgPath
 
@@ -106,7 +90,6 @@ createSpritesTask = (taskName, imgDir, cssDir, outputImgPath = '') ->
     .pipe sprite spriteObj
 
     spriteData.img
-    # .pipe imagemin optimizationLevel: 3
     .pipe gulp.dest "#{SRC_DIR}#{imgDir}"
     .pipe gulp.dest "#{PUBLISH_DIR}#{imgDir}"
 
@@ -114,32 +97,6 @@ createSpritesTask = (taskName, imgDir, cssDir, outputImgPath = '') ->
 
   watchSpritesTasks.unshift => gulp.watch srcImgFiles, [ taskName ]
 
-#
-# coffee scriptでconcatする場合のタスクを生成
-#
-# @param {string} taskName        タスクを識別するための名前 スプライトタスクが複数ある場合はユニークにする
-# @param {string} src             ソースパス
-# @param {string} outputDir       最終的に出力されるjsが格納されるディレクトリ
-# @param {string} outputFileName  最終的に出力されるjsファイル名(拡張子なし)
-#
-createCoffeeConcatTask = (taskName, src, outputDir, outputFileName) ->
-  coffeeConcatTask.push taskName
-
-  gulp.task taskName, ->
-    gulp.src src
-    .pipe plumber errorHandler: errorHandler taskName
-    .pipe coffeelint {
-      camel_case_classes: level: 'ignore'
-      max_line_length: level: 'ignore'
-      no_unnecessary_fat_arrows: level: 'ignore'
-    }
-    .pipe coffeelint.reporter()
-    .pipe concat outputFileName
-    .pipe coffee()
-    .pipe gulp.dest outputDir
-    .pipe print (path)-> "[#{taskName}]: #{path}"
-
-  watchCoffeeConcatTask.push => gulp.watch src, [ taskName ]
 
 
 #############
@@ -159,16 +116,10 @@ gulp.task 'clean', ->
 
 # concat
 gulp.task 'concat', ->
-  gulp.src [
-    "#{SRC_DIR}#{ASSETS_DIR}/js/_lib/jquery.min.js"
-    "#{SRC_DIR}#{ASSETS_DIR}/js/_lib/three.min.js"
-    "#{SRC_DIR}#{ASSETS_DIR}/js/_lib/OrbitControls.js"
-    "#{SRC_DIR}#{ASSETS_DIR}/js/_lib/Projector.js"
-    "#{SRC_DIR}#{ASSETS_DIR}/js/_lib/TweenMax.min.js"
-  ]
+  gulp.src ['']
   .pipe plumber errorHandler: errorHandler 'concat'
-  .pipe concat 'lib.js', { newLine: ';' }
-  .pipe gulp.dest "#{PUBLISH_DIR}#{ASSETS_DIR}/js"
+  .pipe concat 'common.js'
+  .pipe gulp.dest "#{PUBLISH_DIR}#{ASSETS_DIR}/js/lib"
   .pipe print (path)-> "[concat]: #{path}"
 
 
@@ -246,6 +197,7 @@ gulp.task 'jade', ->
 gulp.task 'jadeAll', ->
   gulp.src createSrcArr 'jade'
   .pipe plumber errorHandler: errorHandler 'jadeAll'
+  .pipe data -> require DATA_JSON
   .pipe jade
     pretty: true
     basedir: SRC_DIR
@@ -267,7 +219,7 @@ gulp.task 'sass', ->
   .pipe plumber errorHandler: errorHandler 'sass'
   .pipe sass
     unixNewlines: true
-    'sourcemap=none': true
+    "sourcemap=none": true
     style: 'expanded'
   .pipe autoprefixer()
   .pipe gulp.dest PUBLISH_DIR
@@ -279,7 +231,7 @@ gulp.task 'sassAll', ->
   .pipe plumber errorHandler: errorHandler 'sass'
   .pipe sass
     unixNewlines: true
-    'sourcemap=none': true
+    "sourcemap=none": true
     style: 'expanded'
   .pipe autoprefixer()
   .pipe gulp.dest PUBLISH_DIR
@@ -308,7 +260,7 @@ gulp.task 'jshint', ->
 gulp.task 'coffee', ->
   gulp.src createSrcArr 'coffee'
   .pipe changed PUBLISH_DIR, { extension: '.js' }
-  .pipe plumber errorHandler: errorHandler 'coffee'
+  .pipe plumber errorHandler: errorHandler 'coffeelint'
   .pipe coffee()
   .pipe gulp.dest PUBLISH_DIR
   .pipe print (path)-> "[coffee]: #{path}"
@@ -316,26 +268,13 @@ gulp.task 'coffee', ->
 # coffeeAll
 gulp.task 'coffeeAll', ->
   gulp.src createSrcArr 'coffee'
-  .pipe plumber errorHandler: errorHandler 'coffeeAll'
+  .pipe plumber errorHandler: errorHandler 'coffeelint'
   .pipe coffee()
   .pipe gulp.dest PUBLISH_DIR
   .pipe print (path)-> "[coffeeAll]: #{path}"
 
-# game.js
-# createCoffeeConcatTask(
-#   'coffeeSpecialJs'
-#   [
-#     "#{SRC_DIR}#{ASSETS_DIR}/js/_game/game.coffee"
-#     "#{SRC_DIR}#{ASSETS_DIR}/js/_game/Root.coffee"
-#     "#{SRC_DIR}#{ASSETS_DIR}/js/_game/Sound.coffee"
-#     "#{SRC_DIR}#{ASSETS_DIR}/js/_game/debugger.coffee"
-#   ]
-#   "#{PUBLISH_DIR}#{ASSETS_DIR}/js/"
-#   'game'
-# )
-
 # js
-gulp.task 'js', [ 'copyJs', 'coffee' ].concat(coffeeConcatTask)
+gulp.task 'js', [ 'copyJs', 'coffee' ]
 
 
 ############
@@ -360,7 +299,7 @@ gulp.task 'json', [ 'copyJson' ]
 ###########
 
 # sprite
-createSpritesTask 'indexSprites', "#{ASSETS_DIR}/img", "#{ASSETS_DIR}/css", "../img/indexSprites.png"
+createSpritesTask 'commonSprites', "#{ASSETS_DIR}/img/common", "#{ASSETS_DIR}/css/_sprites", "../img/common/commonSprites.png"
 
 gulp.task 'sprites', spritesTask
 
@@ -387,7 +326,6 @@ gulp.task 'watcher', ->
   gulp.watch paths.coffeeInclude, [ 'coffeeAll' ]
 
   for task in  watchSpritesTasks then task()
-  for task in  watchCoffeeConcatTask then task()
 
   gulp.src PUBLISH_DIR
   .pipe webserver
@@ -395,10 +333,6 @@ gulp.task 'watcher', ->
     port: 50000
     open: true
     host: '0.0.0.0'
-    middleware:
-      connectSSI
-        baseDir: "#{__dirname}/#{PUBLISH_DIR}"
-        ext: '.html'
   .pipe notify 'start local server. http://localhost:50000/'
 
 
