@@ -427,7 +427,7 @@ gulp.task 'bower', ->
       .pipe gulp.dest "#{SRC_DIR}#{ASSETS_DIR}/js/lib"
       .pipe jsFilter.restore()
       .pipe cssFilter
-      .pipe gulp.dest "#{SRC_DIR}#{ASSETS_DIR}/css/_sprites/lib"
+      .pipe gulp.dest "#{SRC_DIR}#{ASSETS_DIR}/css/lib"
       .pipe cssFilter.restore()
       .pipe notify 'done bower task'
 
