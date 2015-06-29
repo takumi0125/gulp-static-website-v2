@@ -86,7 +86,7 @@ gulp img
 ```
 createSpritesTask
 ```
-を使用してください。使用方法は `gulpfile.coffee` の66行目以降に記載されています。
+を使用してください。使用方法は `gulpfile.coffee` に記載されています。
 
 
 ## bower
