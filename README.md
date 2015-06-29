@@ -7,7 +7,7 @@ gulp-static-website-v2
 ```bash
 mkdir yourProject
 cd yourProject
-git clone --recursive git@github.com:takumi0125/gulp-static-website.git .
+git clone --recursive git@github.com:takumi0125/gulp-static-website-v2.git .
 cd gulp
 npm install
 ```
